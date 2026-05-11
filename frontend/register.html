@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Register - SilentTalk</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <img src="logo.jpeg" alt="SilentTalk Logo" class="logo">
+        <h1>Register</h1>
+    </header>
+
+    <main class="container">
+        <form class="form">
+            <input type="text" placeholder="Full Name" id="fullname" required>
+            <input type="email" placeholder="Email" id="email" required>
+            <input type="password" placeholder="Password" id="password" required>
+            <select id="role" required>
+                <option value="">Select Role</option>
+                <option value="personal">Personal Use</option>
+                <option value="organization">Organizational Use</option>
+            </select>
+            <button type="submit">Register</button>
+        </form>
+        <p>Already have an account? <a href="login.html">Login</a></p>
+    </main>
+
+    <script>
+    const form = document.querySelector('.form');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const data = {
+            fullname: document.getElementById('fullname').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            role: document.getElementById('role').value
+        };
+
+        if(!data.role){
+            alert("Please select a role!");
+            return;
+        }
+
+        try {
+            const res = await fetch('http://127.0.0.1:5001/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            alert(result.message);
+
+            if(res.status === 201) {
+                // redirect after successful registration
+                if(data.role === 'personal'){
+                    window.location.href = 'personal.html';
+                } else {
+                    window.location.href = 'organization.html';
+                }
+            }
+        } catch (error) {
+            console.error("Registration error:", error);
+            alert("Something went wrong! Check backend console for details.");
+        }
+    });
+    </script>
+</body>
+</html>

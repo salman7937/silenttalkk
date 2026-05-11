@@ -1,0 +1,169 @@
+/* General body style */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: rgb(241, 197, 90); /* Light yellow background */
+    color: #000; /* Jet black text */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header */
+.header {
+    background-color: rgb(113, 68, 9); /* Dark brown */
+    color: #fff;
+    text-align: center;
+    padding: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+#flip-btn {
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.header .logo {
+    height: 60px;
+    width: auto;
+}
+
+/* Main container */
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 50px 20px;
+}
+
+/* Form style */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 300px;
+}
+
+input, select {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 2px solid rgb(113, 68, 9);
+}
+
+button {
+    background-color: rgb(113, 68, 9);
+    color: rgb(241, 197, 90);
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: rgb(241, 197, 90);
+    color: rgb(113, 68, 9);
+    transform: scale(1.05);
+}
+
+p {
+    font-size: 16px;
+}
+
+a {
+    color: rgb(113, 68, 9);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 120px 1fr;
+    height: 80vh;
+    gap: 10px;
+    padding: 20px;
+}
+
+/* TOP LEFT */
+.top-left {
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* TOP RIGHT */
+.top-right {
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* BOTTOM LEFT (CAMERA BOX) */
+.bottom-left {
+    background: black;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* CAMERA + CANVAS */
+.bottom-left video,
+.bottom-left canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* BOTTOM RIGHT (OUTPUT BOX) */
+.bottom-right {
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    font-weight: bold;
+    color: rgb(113, 68, 9);
+}
+
+/* FLIP BUTTON */
+#flip-btn {
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    background: rgb(113, 68, 9);
+    color: white;
+}
+#output{
+    width: 90%;
+    height: 250px;
+    font-size: 42px;
+    direction: rtl;
+    text-align: right;
+    padding: 20px;
+    border-radius: 12px;
+    resize: none;
+    border: 3px solid rgb(113,68,9);
+    font-family: 'Noto Nastaliq Urdu', serif;
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Personal Use - SilentTalk</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <img src="logo.jpeg" alt="SilentTalk Logo" class="logo">
+        <h1>Personal Mode</h1>
+    </header>
+<main class="container">
+
+    <button id="flip-btn">🔄 Flip Camera</button>
+
+    <div class="dashboard">
+
+        <!-- LEFT: CAMERA -->
+        <div class="panel left">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <!-- RIGHT: OUTPUT -->
+        <div class="panel right">
+    <h2>اردو ٹائپنگ</h2>
+
+    <div class="output-box">
+        <textarea id="output" readonly></textarea>
+    </div>
+
+    <div style="margin-top:15px;">
+        <button onclick="clearText()">Clear</button>
+    </div>
+</div>
+
+    </div>
+
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="sign.js"></script>
+</body>
+</html>
