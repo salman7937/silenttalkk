@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dataset Capture - SilentTalk</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <img src="logo.jpeg" alt="SilentTalk Logo" class="logo">
+        <h1>Dataset Capture</h1>
+    </header>
+
+    <main class="container">
+        <section class="panel left">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </section>
+
+        <section class="panel right">
+            <h2>Capture Urdu Sign Samples</h2>
+            <p>Select a sign label, then press <strong>Capture Sample</strong> while holding the pose.</p>
+
+            <label for="label-select">Sign label</label>
+            <select id="label-select">
+                <option value="aliph">aliph (ا)</option>
+                <option value="bay">bay (ب)</option>
+                <option value="pay">pay (پ)</option>
+                <option value="ray">ray (ر)</option>
+                <option value="seen">seen (س)</option>
+                <option value="laam">laam (ل)</option>
+                <option value="meem">meem (م)</option>
+                <option value="noon">noon (ن)</option>
+                <option value="kaaf">kaaf (ک)</option>
+                <option value="hey">hey (ہ)</option>
+                <option value="none">none (no sign)</option>
+            </select>
+
+            <div style="margin-top: 12px;">
+                <button id="capture-btn">Capture Sample</button>
+                <button id="download-btn" disabled>Download Dataset</button>
+                <button id="clear-btn" type="button">Clear Local Samples</button>
+            </div>
+
+            <div style="margin-top: 18px;">
+                <p id="status">Samples collected: 0</p>
+                <p id="pose-status">Waiting for hand...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="landmark_features.js"></script>
+    <script src="capture.js"></script>
+</body>
+</html>

@@ -10,38 +10,40 @@
         <img src="logo.jpeg" alt="SilentTalk Logo" class="logo">
         <h1>Personal Mode</h1>
     </header>
-<main class="container">
 
-    <button id="flip-btn">🔄 Flip Camera</button>
+    <main class="container">
+        <button id="flip-btn">Flip Camera</button>
 
-    <div class="dashboard">
+        <div class="dashboard">
+            <div class="panel left">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+            </div>
 
-        <!-- LEFT: CAMERA -->
-        <div class="panel left">
-            <video id="video" autoplay playsinline></video>
-            <canvas id="canvas"></canvas>
+            <div class="panel right">
+                <div style="margin-bottom: 12px;">
+                    <a href="capture.html" class="button" style="padding: 10px 16px; background: #6d4c14; color: white; border-radius: 6px; text-decoration: none;">Open Dataset Capture</a>
+                </div>
+                <h2>اردو ٹائپنگ</h2>
+                <p id="debug-prediction">Waiting for detection...</p>
+
+                <div class="output-box">
+                    <textarea id="output" readonly></textarea>
+                </div>
+
+                <div style="margin-top:15px;">
+                    <button onclick="clearText()">Clear</button>
+                </div>
+            </div>
         </div>
+    </main>
 
-        <!-- RIGHT: OUTPUT -->
-        <div class="panel right">
-    <h2>اردو ٹائپنگ</h2>
-
-    <div class="output-box">
-        <textarea id="output" readonly></textarea>
-    </div>
-
-    <div style="margin-top:15px;">
-        <button onclick="clearText()">Clear</button>
-    </div>
-</div>
-
-    </div>
-
-</main>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-<script src="sign.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="landmark_features.js"></script>
+    <script src="mediapipe_predictor.js"></script>
+    <script src="sign.js"></script>
 </body>
 </html>

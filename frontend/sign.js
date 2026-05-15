@@ -1,16 +1,20 @@
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
     const video = document.getElementById("video");
     const output = document.getElementById("output");
     const flipBtn = document.getElementById("flip-btn");
-    const canvas = document.getElementById("canvas"); // Using the actual canvas in your HTML
+    const canvas = document.getElementById("canvas");
+    const debugPrediction = document.getElementById("debug-prediction");
 
     let flipped = false;
     let lastPrediction = "";
     let stableCount = 0;
     let lastAddedTime = 0;
+    let lastCommittedPrediction = "";
+    let noneCounter = 0;
+    let predictor = null;
+    let running = true;
 
-    // Updated Urdu map with all 11 classes from your YOLO11 model
-    const map = {
+    const labelMap = {
         "aliph": "ا",
         "bay": "ب",
         "pay": "پ",
@@ -20,90 +24,118 @@ window.addEventListener("DOMContentLoaded", () => {
         "meem": "م",
         "noon": "ن",
         "kaaf": "ک",
-        "hey": "ہ",
-        "psl-signs": "" // Spacer or ignore
+        "hey": "ہ"
     };
 
-    // Initialize Camera
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             video.srcObject = stream;
-        })
-        .catch(err => console.error("Camera error:", err));
+            await video.play();
+        } catch (err) {
+            console.error("Camera error:", err);
+        }
+    }
 
-    // Flip functionality
     flipBtn.addEventListener("click", () => {
         flipped = !flipped;
         video.style.transform = flipped ? "scaleX(-1)" : "scaleX(1)";
         canvas.style.transform = flipped ? "scaleX(-1)" : "scaleX(1)";
     });
 
-    // AI Detection Function
-    async function predictFrame() {
-        if (video.readyState !== 4) return;
-
-        // Set canvas size to match video
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-
-        // Draw current frame to canvas for visual feedback
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob(async (blob) => {
-            const fd = new FormData();
-            fd.append("image", blob, "frame.jpg");
-
-            try {
-                // Ensure this matches your Flask port (5001)
-                const res = await fetch("http://127.0.0.1:5001/predict", {
-                    method: "POST",
-                    body: fd
-                });
-
-                const data = await res.json();
-                if (!data.prediction) return;
-
-                let current = data.prediction.toLowerCase().trim();
-
-                // Space/Thumb support
-                if (current.includes("thumb") || current.includes("up") || current === "psl-signs") {
-                    if (Date.now() - lastAddedTime > 2000) {
-                        output.value += " ";
-                        lastAddedTime = Date.now();
-                    }
-                    return;
-                }
-
-                // Ignore unknown labels
-                if (!map[current]) return;
-
-                // Stability check: Model must see the same sign multiple times
-                if (current === lastPrediction) {
-                    stableCount++;
-                } else {
-                    stableCount = 1;
-                    lastPrediction = current;
-                }
-
-                // Add to output if stable (sign held for ~1.5s total)
-                if (stableCount >= 3 && Date.now() - lastAddedTime > 2000) {
-                    output.value += map[current];
-                    lastAddedTime = Date.now();
-                    stableCount = 0; // Reset after adding
-                }
-
-            } catch (err) {
-                console.log("Prediction Fetch Error:", err);
+    function renderDebug(result) {
+        if (!debugPrediction) return;
+        if (!result || result.prediction === "none") {
+            if (result?.reason === "no_hand") {
+                debugPrediction.textContent = "No hand detected";
+                return;
             }
-        }, "image/jpeg");
+            if (result?.reason === "pattern_miss" || result?.handDetected) {
+                debugPrediction.textContent = "Hand detected but sign pattern not matched";
+                return;
+            }
+            debugPrediction.textContent = "No hand / uncertain sign";
+            return;
+        }
+
+        const top3 = result.top3 || [];
+        const topText = top3.map((item) => `${item.label}:${item.confidence.toFixed(2)}`).join(" | ");
+        debugPrediction.textContent = `Stable: ${stableCount} · ${result.prediction} (${result.confidence.toFixed(2)}) · ${topText}`;
     }
 
-    // Increased speed: Running every 700ms for better responsiveness
-    setInterval(predictFrame, 700);
+    function commitPrediction(prediction) {
+        if (!labelMap[prediction]) return;
+        const now = Date.now();
+        if (now - lastAddedTime < 900) return;
+        if (prediction === lastCommittedPrediction) return;
+
+        output.value += labelMap[prediction];
+        lastAddedTime = now;
+        lastCommittedPrediction = prediction;
+        stableCount = 0;
+    }
+
+    async function runInferenceLoop() {
+        if (!predictor) return;
+        const intervalMs = 150;
+
+        while (running) {
+            const result = await predictor.predict();
+            renderDebug(result);
+
+            if (result.prediction === "none") {
+                noneCounter += 1;
+                if (noneCounter >= 4) {
+                    lastPrediction = "";
+                }
+            } else {
+                noneCounter = 0;
+            }
+
+            if (result.prediction === "none") {
+                stableCount = 0;
+            } else if (result.prediction === lastPrediction) {
+                stableCount += 1;
+            } else {
+                stableCount = 1;
+                lastPrediction = result.prediction;
+            }
+
+            if (
+                result.prediction !== "none" &&
+                stableCount >= 5 &&
+                Date.now() - lastAddedTime > 900
+            ) {
+                commitPrediction(result.prediction);
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, intervalMs));
+        }
+    }
+
+    await startCamera();
+
+    predictor = new window.SilentTalkPredictor();
+    try {
+        await predictor.init(video);
+        runInferenceLoop();
+    } catch (err) {
+        console.error("Predictor init error:", err);
+        if (debugPrediction) {
+            debugPrediction.textContent = "Unable to initialize MediaPipe predictor.";
+        }
+    }
+
+    window.addEventListener("beforeunload", () => {
+        running = false;
+        predictor?.stop();
+        const stream = video.srcObject;
+        if (stream && stream.getTracks) {
+            stream.getTracks().forEach((track) => track.stop());
+        }
+    });
 });
 
-// Clear output box
 function clearText() {
     const output = document.getElementById("output");
     if (output) output.value = "";
