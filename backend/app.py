@@ -41,11 +41,17 @@ db = SQLAlchemy(app)
 # Database model (Same as yours)
 # ----------------------------
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id       = db.Column(db.Integer, primary_key=True)
     fullname = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
+    email    = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    role = db.Column(db.String(50), nullable=False)
+    role     = db.Column(db.String(50),  nullable=False)
+
+    def __init__(self, fullname: str, email: str, password: str, role: str):
+        self.fullname = fullname
+        self.email    = email
+        self.password = password
+        self.role     = role
 
 with app.app_context():
     db.create_all()
@@ -165,4 +171,4 @@ def predict_landmarks():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5001, use_reloader=False)
