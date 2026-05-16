@@ -8,18 +8,11 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-CLASS_LABELS = [
-    "aliph",
-    "bay",
-    "pay",
-    "ray",
-    "seen",
-    "laam",
-    "meem",
-    "noon",
-    "kaaf",
-    "hey",
-    "none"
+# All possible labels — used only as a reference/ordering.
+# The model will be trained ONLY on labels that actually exist in your dataset.
+ALL_KNOWN_LABELS = [
+    "aliph", "bay", "pay", "ray", "seen",
+    "laam", "meem", "noon", "kaaf", "hey", "none"
 ]
 
 
@@ -81,7 +74,8 @@ def load_dataset(dataset_dir):
         for item in raw:
             landmarks = item.get("landmarks")
             label = item.get("label")
-            if not landmarks or label not in CLASS_LABELS:
+            # Accept ANY label that has data — not just hardcoded list
+            if not landmarks or not label:
                 continue
             features = extract_features(landmarks)
             if features is None:
@@ -94,7 +88,13 @@ def load_dataset(dataset_dir):
 
     X = np.stack(feature_list)
     y = np.array(label_list)
-    return X, y
+
+    # Auto-detect: only labels that actually exist in this dataset
+    detected_labels = sorted(set(y))
+    print(f"\n[AUTO-DETECT] Labels found in dataset: {detected_labels}")
+    print(f"[AUTO-DETECT] Model will train ONLY on these {len(detected_labels)} classes.")
+
+    return X, y, detected_labels
 
 
 def build_model(input_dim, num_classes):
@@ -123,14 +123,22 @@ def main():
     parser.add_argument("--tflite", default="frontend/model/urdu10_model.tflite", help="Path to save the converted TFLite model")
     args = parser.parse_args()
 
-    X, y = load_dataset(args.dataset_dir)
+    # Load dataset — auto-detects which labels actually have data
+    X, y, detected_labels = load_dataset(args.dataset_dir)
+
+    # Encode ONLY the labels present in dataset (not the full hardcoded list)
     encoder = LabelEncoder()
-    encoder.fit(CLASS_LABELS)
+    encoder.fit(detected_labels)
     y_encoded = encoder.transform(y)
+    num_classes = len(detected_labels)
 
-    X_train, X_val, y_train, y_val = train_test_split(X, y_encoded, test_size=0.2, stratify=y_encoded, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y_encoded, test_size=0.2, stratify=y_encoded, random_state=42
+    )
 
-    model = build_model(X.shape[1], len(CLASS_LABELS))
+    # Build model with ONLY the number of classes in dataset
+    model = build_model(X.shape[1], num_classes)
+    print(f"\nModel output neurons: {num_classes}  (one per trained class)")
 
     callbacks = [
         tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=8, restore_best_weights=True),
@@ -157,10 +165,12 @@ def main():
         f_out.write(tflite_model)
     print(f"Saved TFLite model to {args.tflite}")
 
+    # Save ONLY the labels that were actually trained
     label_path = os.path.join(os.path.dirname(args.output), "urdu10_labels.json")
     with open(label_path, "w", encoding="utf-8") as f:
-        json.dump(CLASS_LABELS, f, ensure_ascii=False, indent=2)
+        json.dump(detected_labels, f, ensure_ascii=False, indent=2)
     print(f"Saved label mapping to {label_path}")
+    print(f"Trained classes: {detected_labels}")
 
 if __name__ == "__main__":
     main()
