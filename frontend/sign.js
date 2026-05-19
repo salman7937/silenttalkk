@@ -35,16 +35,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     };
 
     const speechFallbackMap = {
-        "ا": "alif",
-        "ب": "bay",
-        "پ": "pay",
-        "ر": "ray",
-        "س": "seen",
-        "ل": "laam",
-        "م": "meem",
-        "ن": "noon",
-        "ک": "kaaf",
-        "ہ": "hey"
+        "ا": "a",
+        "ب": "b",
+        "پ": "p",
+        "ر": "r",
+        "س": "s",
+        "ل": "l",
+        "م": "m",
+        "ن": "n",
+        "ک": "k",
+        "ہ": "h"
     };
 
     async function startCamera() {
@@ -96,11 +96,26 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (!normalized) return "";
         const hasUrduChars = /[\u0600-\u06FF]/.test(normalized);
         if (!hasUrduVoice && hasUrduChars) {
-            const fallback = normalized
-                .split("")
-                .map((ch) => speechFallbackMap[ch] || ch)
-                .join(" ");
-            return normalizeSpeakText(fallback);
+            const words = normalized.split(/\s+/).map((word) => {
+                const letters = word
+                    .split("")
+                    .map((ch) => speechFallbackMap[ch] || "")
+                    .filter(Boolean);
+                if (!letters.length) return word;
+                if (letters.length === 1) return letters[0];
+
+                let token = "";
+                for (let i = 0; i < letters.length; i += 1) {
+                    token += letters[i];
+                    const isLast = i === letters.length - 1;
+                    const next = letters[i + 1];
+                    const isVowel = letters[i] === "a";
+                    const nextIsVowel = next === "a";
+                    if (!isLast && !isVowel && !nextIsVowel) token += "a";
+                }
+                return token;
+            });
+            return normalizeSpeakText(words.join(" "));
         }
         return normalized;
     }
@@ -294,3 +309,4 @@ function clearText() {
     const speechStatus = document.getElementById("speech-status");
     if (speechStatus) speechStatus.textContent = "Cleared";
 }
+
