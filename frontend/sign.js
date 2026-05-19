@@ -4,6 +4,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     const flipBtn = document.getElementById("flip-btn");
     const canvas = document.getElementById("canvas");
     const debugPrediction = document.getElementById("debug-prediction");
+    const speakBtn = document.getElementById("speak-btn");
+    const stopSpeakBtn = document.getElementById("stop-speak-btn");
+    const speechStatus = document.getElementById("speech-status");
 
     let flipped = false;
     let lastPrediction = "";
@@ -13,6 +16,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     let noneCounter = 0;
     let predictor = null;
     let running = true;
+    const hasTTS = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+    let selectedVoice = null;
+    let hasUrduVoice = false;
+    let speakAttemptId = 0;
 
     const labelMap = {
         "aliph": "ا",
@@ -27,6 +34,19 @@ window.addEventListener("DOMContentLoaded", async () => {
         "hey": "ہ"
     };
 
+    const speechFallbackMap = {
+        "ا": "alif",
+        "ب": "bay",
+        "پ": "pay",
+        "ر": "ray",
+        "س": "seen",
+        "ل": "laam",
+        "م": "meem",
+        "ن": "noon",
+        "ک": "kaaf",
+        "ہ": "hey"
+    };
+
     async function startCamera() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
@@ -36,6 +56,132 @@ window.addEventListener("DOMContentLoaded", async () => {
             console.error("Camera error:", err);
         }
     }
+
+    function setSpeechStatus(message) {
+        if (speechStatus) speechStatus.textContent = message;
+    }
+
+    function chooseVoice() {
+        if (!hasTTS) return;
+        const voices = window.speechSynthesis.getVoices() || [];
+        const georgeVoice =
+            voices.find((voice) => voice.name && voice.name.toLowerCase() === "microsoft george") ||
+            voices.find((voice) => voice.name && voice.name.toLowerCase().includes("microsoft george")) ||
+            voices.find((voice) => voice.name && voice.name.toLowerCase().includes("george"));
+        const urduVoice = voices.find((voice) => voice.lang && voice.lang.toLowerCase().startsWith("ur"));
+        const fallbackVoice =
+            urduVoice ||
+            voices.find((voice) => voice.lang && voice.lang.toLowerCase().startsWith("hi")) ||
+            voices.find((voice) => voice.lang && voice.lang.toLowerCase().startsWith("en")) ||
+            voices[0] ||
+            null;
+
+        selectedVoice = georgeVoice || fallbackVoice;
+        hasUrduVoice = Boolean(selectedVoice?.lang && selectedVoice.lang.toLowerCase().startsWith("ur"));
+    }
+
+    function stopSpeaking(statusMessage = "Stopped") {
+        if (!hasTTS) return;
+        speakAttemptId += 1;
+        window.speechSynthesis.cancel();
+        setSpeechStatus(statusMessage);
+    }
+
+    function normalizeSpeakText(text) {
+        return text.replace(/\s+/g, " ").trim();
+    }
+
+    function buildSpeakText(rawText) {
+        const normalized = normalizeSpeakText(rawText);
+        if (!normalized) return "";
+        const hasUrduChars = /[\u0600-\u06FF]/.test(normalized);
+        if (!hasUrduVoice && hasUrduChars) {
+            const fallback = normalized
+                .split("")
+                .map((ch) => speechFallbackMap[ch] || ch)
+                .join(" ");
+            return normalizeSpeakText(fallback);
+        }
+        return normalized;
+    }
+
+    function speakText(textToSpeak, attemptId) {
+        if (!hasTTS || attemptId !== speakAttemptId || !textToSpeak) return;
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        if (selectedVoice) {
+            utterance.voice = selectedVoice;
+            utterance.lang = selectedVoice.lang;
+        } else {
+            utterance.lang = "en-US";
+        }
+        utterance.rate = hasUrduVoice ? 0.95 : 0.82;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        let started = false;
+        const startedAt = Date.now();
+        utterance.onstart = () => {
+            started = true;
+            const voiceName = selectedVoice?.name ? ` [${selectedVoice.name}]` : "";
+            if (hasUrduVoice) {
+                setSpeechStatus(`Speaking...${voiceName}`);
+            } else {
+                setSpeechStatus(`Speaking (fallback voice)...${voiceName}`);
+            }
+        };
+        utterance.onerror = () => {
+            setSpeechStatus("Speech failed");
+        };
+        utterance.onend = () => {
+            if (attemptId !== speakAttemptId) return;
+            const durationMs = Date.now() - startedAt;
+            if (!started || durationMs < 120) setSpeechStatus("Speech failed");
+            else setSpeechStatus("Finished");
+        };
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function speakOutputText() {
+        if (!hasTTS) return;
+        chooseVoice();
+        const text = (output?.value || "").trim();
+        if (!text) {
+            setSpeechStatus("No text to speak");
+            return;
+        }
+
+        const textToSpeak = buildSpeakText(text);
+        if (!textToSpeak) {
+            setSpeechStatus("No text to speak");
+            return;
+        }
+
+        speakAttemptId += 1;
+        const attemptId = speakAttemptId;
+        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+        }
+        speakText(textToSpeak, attemptId);
+    }
+
+    if (hasTTS) {
+        chooseVoice();
+        if (typeof window.speechSynthesis.addEventListener === "function") {
+            window.speechSynthesis.addEventListener("voiceschanged", chooseVoice);
+        } else {
+            window.speechSynthesis.onvoiceschanged = chooseVoice;
+        }
+        setSpeechStatus("Ready to speak");
+    } else {
+        if (speakBtn) speakBtn.disabled = true;
+        if (stopSpeakBtn) stopSpeakBtn.disabled = true;
+        setSpeechStatus("Text-to-speech not supported in this browser.");
+    }
+
+    speakBtn?.addEventListener("click", speakOutputText);
+    stopSpeakBtn?.addEventListener("click", () => stopSpeaking("Stopped"));
 
     flipBtn.addEventListener("click", () => {
         flipped = !flipped;
@@ -129,6 +275,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener("beforeunload", () => {
         running = false;
         predictor?.stop();
+        if (hasTTS) {
+            window.speechSynthesis.cancel();
+        }
         const stream = video.srcObject;
         if (stream && stream.getTracks) {
             stream.getTracks().forEach((track) => track.stop());
@@ -139,4 +288,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 function clearText() {
     const output = document.getElementById("output");
     if (output) output.value = "";
+    if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+    }
+    const speechStatus = document.getElementById("speech-status");
+    if (speechStatus) speechStatus.textContent = "Cleared";
 }

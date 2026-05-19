@@ -167,3 +167,30 @@ a:hover {
     border: 3px solid rgb(113,68,9);
     font-family: 'Noto Nastaliq Urdu', serif;
 }
+
+.speech-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+#speech-status {
+    min-height: 20px;
+    margin-top: 8px;
+    color: rgb(113, 68, 9);
+    font-weight: 600;
+}
+
+.voice-controls {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+#voice-select {
+    max-width: 320px;
+}
